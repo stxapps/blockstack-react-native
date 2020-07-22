@@ -233,6 +233,9 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
                     }
                 }
             }
+        } else {
+            Log.d(name, "reject put file")
+            promise.reject(IllegalStateException("In putFile, canUseBlockstack() returns false"))
         }
     }
 
@@ -255,6 +258,9 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
                     }
                 }
             }
+        } else {
+            Log.d(name, "reject get file")
+            promise.reject(IllegalStateException("In getFile, canUseBlockstack() returns false"))
         }
     }
 
@@ -262,31 +268,40 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     fun deleteFile(path: String, optionsArg: ReadableMap, promise: Promise) {
         if (canUseBlockstack()) {
             runOnV8Thread {
-                val options = DeleteFileOptions()
+                val options = DeleteFileOptions(optionsArg.getBoolean("wasSigned"))
                 session.deleteFile(path, options) {
                     if (it.hasValue) {
                         val map = Arguments.createMap()
-                        map.putBoolean("deletedFile", true)
+                        map.putBoolean("deleted", true)
                         promise.resolve(map)
                     } else {
                         promise.reject("0", it.error)
                     }
                 }
             }
+        } else {
+            Log.d(name, "reject delete file")
+            promise.reject(IllegalStateException("In deleteFile, canUseBlockstack() returns false"))
         }
     }
 
     @ReactMethod
-    fun listFiles(callback: Callback, promise: Promise) {
+    fun listFiles(promise: Promise) {
+        // React native only supports one promise or two callbacks
+        //   and cannot mix them together.
+        // https://github.com/facebook/react-native/issues/14702
         if (canUseBlockstack()) {
             runOnV8Thread {
+                // list all files and return to JS just once
+                val files = ArrayList<String>()
                 session.listFiles({
                     result: Result<String> ->
-                    callback.invoke(result.value)
+                    result.value?.let { files.add(it) }
                     true
                 }) {
                     if (it.hasValue) {
                         val map = Arguments.createMap()
+                        map.putArray("files", Arguments.fromList(files))
                         it.value?.let { it1 -> map.putInt("fileCount", it1) }
                         promise.resolve(map)
                     } else {
@@ -294,6 +309,9 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
                     }
                 }
             }
+        } else {
+            Log.d(name, "reject list files")
+            promise.reject(IllegalStateException("in listFiles, canUseBlockstack() returns false"))
         }
     }
 
@@ -344,7 +362,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     }
 
 
-    private fun canUseBlockstack() = session.loaded && reactApplicationContext.currentActivity != null
+    private fun canUseBlockstack() = this::session.isInitialized && session.loaded && reactApplicationContext.currentActivity != null
 
 
     @Throws(JSONException::class)
