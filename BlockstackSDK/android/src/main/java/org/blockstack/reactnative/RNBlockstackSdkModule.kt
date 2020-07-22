@@ -11,11 +11,13 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.blockstack.android.sdk.BlockstackSession
 import org.blockstack.android.sdk.Executor
+import org.blockstack.android.sdk.Result
 import org.blockstack.android.sdk.Scope
 import org.blockstack.android.sdk.model.BlockstackConfig
 import org.blockstack.android.sdk.model.CryptoOptions
 import org.blockstack.android.sdk.model.GetFileOptions
 import org.blockstack.android.sdk.model.PutFileOptions
+import org.blockstack.android.sdk.model.DeleteFileOptions
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -247,6 +249,45 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
                         } else {
                             map.putString("fileContentsEncoded", Base64.encodeToString(it.value as ByteArray, Base64.NO_WRAP))
                         }
+                        promise.resolve(map)
+                    } else {
+                        promise.reject("0", it.error)
+                    }
+                }
+            }
+        }
+    }
+
+    @ReactMethod
+    fun deleteFile(path: String, optionsArg: ReadableMap, promise: Promise) {
+        if (canUseBlockstack()) {
+            runOnV8Thread {
+                val options = DeleteFileOptions()
+                session.deleteFile(path, options) {
+                    if (it.hasValue) {
+                        val map = Arguments.createMap()
+                        map.putBoolean("deletedFile", true)
+                        promise.resolve(map)
+                    } else {
+                        promise.reject("0", it.error)
+                    }
+                }
+            }
+        }
+    }
+
+    @ReactMethod
+    fun listFiles(callback: Callback, promise: Promise) {
+        if (canUseBlockstack()) {
+            runOnV8Thread {
+                session.listFiles({
+                    result: Result<String> ->
+                    callback.invoke(result.value)
+                    true
+                }) {
+                    if (it.hasValue) {
+                        val map = Arguments.createMap()
+                        it.value?.let { it1 -> map.putInt("fileCount", it1) }
                         promise.resolve(map)
                     } else {
                         promise.reject("0", it.error)
