@@ -270,12 +270,12 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
             runOnV8Thread {
                 val options = DeleteFileOptions(optionsArg.getBoolean("wasSigned"))
                 session.deleteFile(path, options) {
-                    if (it.hasValue) {
+                    if (it.hasErrors) {
+                        promise.reject("0", it.error)
+                    } else {
                         val map = Arguments.createMap()
                         map.putBoolean("deleted", true)
                         promise.resolve(map)
-                    } else {
-                        promise.reject("0", it.error)
                     }
                 }
             }
