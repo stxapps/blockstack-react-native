@@ -52,6 +52,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     init {
         reactContext.addLifecycleEventListener(this)
     }
+
     @ReactMethod
     fun hasSession(promise: Promise) {
         val map = Arguments.createMap()
@@ -70,7 +71,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
             Log.d(name, "waiting for activity to resume")
             Thread.sleep(100)
         }
-        val activity = reactApplicationContext.currentActivity
+        val activity = currentActivity
         if (activity != null) {
             val scopes = configArg.getArray("scopes")
                     ?.toArrayList()
@@ -105,6 +106,9 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
                 try {
                     session = BlockstackSession(activity, config, executor = object : Executor {
                         override fun onMainThread(function: (Context) -> Unit) {
+                            val activity = currentActivity
+                            if (activity == null) throw Exception("Executor onMainThread call needs to have current activity.")
+
                             activity.runOnUiThread {
                                 function(activity)
                             }
@@ -119,7 +123,6 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
                                 function()
                             }
                         }
-
                     })
 
                     Log.d("BlockstackNativeModule", "created session")
@@ -145,7 +148,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
 
     @ReactMethod
     fun isUserSignedIn(promise: Promise) {
-        if (session.loaded) {
+        if (canUseBlockstack()) {
             runOnV8Thread {
                 try {
                     val map = Arguments.createMap()
@@ -164,7 +167,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
 
     @ReactMethod
     fun signIn(promise: Promise) {
-        if (session.loaded) {
+        if (canUseBlockstack() && currentActivity != null) {
             runOnV8Thread {
                 try {
                     RNBlockstackSdkModule.currentSignInPromise = promise
@@ -177,13 +180,13 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
                 }
             }
         } else {
-            promise.reject("NOT_LOADED", "Session not loaded")
+            promise.reject("NOT_LOADED", "Session not loaded or current activity is null")
         }
     }
 
     @ReactMethod
     fun handlePendingSignIn(authResponse: String, promise: Promise) {
-        if (session.loaded) {
+        if (canUseBlockstack()) {
             runOnV8Thread {
                 try {
                     session.handlePendingSignIn(authResponse) { result ->
@@ -207,7 +210,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
 
     @ReactMethod
     fun signUserOut(promise: Promise) {
-        if (session.loaded) {
+        if (canUseBlockstack()) {
             runOnV8Thread {
                 try {
                     session.signUserOut()
@@ -226,7 +229,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
 
     @ReactMethod
     fun loadUserData(promise: Promise) {
-        if (session.loaded) {
+        if (canUseBlockstack()) {
             runOnV8Thread {
                 try {
                     val userData = session.loadUserData()
@@ -410,7 +413,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     }
 
 
-    private fun canUseBlockstack() = this::session.isInitialized && session.loaded && reactApplicationContext.currentActivity != null
+    private fun canUseBlockstack() = this::session.isInitialized && session.loaded
 
 
     @Throws(JSONException::class)
