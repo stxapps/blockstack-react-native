@@ -102,35 +102,39 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
 
             runOnV8Thread {
                 Log.d("BlockstackNativeModule", "create session" + Thread.currentThread().name)
-
-                session = BlockstackSession(activity, config, executor = object : Executor {
-                    override fun onMainThread(function: (Context) -> Unit) {
-                        activity.runOnUiThread {
-                            function(activity)
+                try {
+                    session = BlockstackSession(activity, config, executor = object : Executor {
+                        override fun onMainThread(function: (Context) -> Unit) {
+                            activity.runOnUiThread {
+                                function(activity)
+                            }
                         }
-                    }
 
-                    override fun onV8Thread(function: () -> Unit) {
-                        runOnV8Thread(function)
-                    }
-
-                    override fun onNetworkThread(function: suspend () -> Unit) {
-                        GlobalScope.launch(Dispatchers.IO) {
-                            function()
+                        override fun onV8Thread(function: () -> Unit) {
+                            runOnV8Thread(function)
                         }
-                    }
 
-                })
+                        override fun onNetworkThread(function: suspend () -> Unit) {
+                            GlobalScope.launch(Dispatchers.IO) {
+                                function()
+                            }
+                        }
 
-                Log.d("BlockstackNativeModule", "created session")
-                val map = Arguments.createMap()
-                map.putBoolean("loaded", true)
-                promise.resolve(map)
-                currentSession = session
-                currentHandler = handler
+                    })
+
+                    Log.d("BlockstackNativeModule", "created session")
+                    val map = Arguments.createMap()
+                    map.putBoolean("loaded", true)
+                    promise.resolve(map)
+                    currentSession = session
+                    currentHandler = handler
+                } catch(e: Exception) {
+                    Log.d(name, "Error in createSession: " + e.toString())
+                    promise.reject(e)
+                }
             }
         } else {
-            Log.d(name, "reject create session")
+            Log.d(name, "reject create session as the activity is null")
             promise.reject(IllegalStateException("must be called from an Activity"))
         }
     }
@@ -143,10 +147,15 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     fun isUserSignedIn(promise: Promise) {
         if (session.loaded) {
             runOnV8Thread {
-                val map = Arguments.createMap()
-                map.putBoolean("signedIn", session.isUserSignedIn())
-                Log.d("RNBlockstack", "signed in:" + map.getBoolean("signedIn").toString())
-                promise.resolve(map)
+                try {
+                    val map = Arguments.createMap()
+                    map.putBoolean("signedIn", session.isUserSignedIn())
+                    Log.d("RNBlockstack", "signed in:" + map.getBoolean("signedIn").toString())
+                    promise.resolve(map)
+                } catch (e: Exception) {
+                    Log.d(name, "Error in isUserSignedIn: " + e.toString())
+                    promise.reject(e)
+                }
             }
         } else {
             promise.reject("NOT_LOADED", "Session not loaded")
@@ -157,10 +166,14 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     fun signIn(promise: Promise) {
         if (session.loaded) {
             runOnV8Thread {
-
-                RNBlockstackSdkModule.currentSignInPromise = promise
-                session.redirectUserToSignIn {
-                    // never called
+                try {
+                    RNBlockstackSdkModule.currentSignInPromise = promise
+                    session.redirectUserToSignIn {
+                        // never called
+                    }
+                } catch (e: Exception) {
+                    Log.d(name, "Error in signIn: " + e.toString())
+                    promise.reject(e)
                 }
             }
         } else {
@@ -172,16 +185,21 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     fun handlePendingSignIn(authResponse: String, promise: Promise) {
         if (session.loaded) {
             runOnV8Thread {
-                session.handlePendingSignIn(authResponse) { result ->
-                    val userData = result.value
-                    if (userData != null) {
-                        // The user is now signed in!
-                        val map = convertJsonToMap(userData.json)
-                        map.putBoolean("loaded", true)
-                        promise.resolve(map)
-                    } else {
-                        promise.reject("ERROR", result.error)
+                try {
+                    session.handlePendingSignIn(authResponse) { result ->
+                        val userData = result.value
+                        if (userData != null) {
+                            // The user is now signed in!
+                            val map = convertJsonToMap(userData.json)
+                            map.putBoolean("loaded", true)
+                            promise.resolve(map)
+                        } else {
+                            promise.reject("ERROR", result.error)
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.d(name, "Error in handlePendingSignIn: " + e.toString())
+                    promise.reject(e)
                 }
             }
         }
@@ -191,10 +209,15 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     fun signUserOut(promise: Promise) {
         if (session.loaded) {
             runOnV8Thread {
-                session.signUserOut()
-                val map = Arguments.createMap()
-                map.putBoolean("signedOut", true)
-                promise.resolve(map)
+                try {
+                    session.signUserOut()
+                    val map = Arguments.createMap()
+                    map.putBoolean("signedOut", true)
+                    promise.resolve(map)
+                } catch (e: Exception) {
+                    Log.d(name, "Error in signUserOut: " + e.toString())
+                    promise.reject(e)
+                }
             }
         } else {
             promise.reject("NOT_LOADED", "Session not loaded")
@@ -205,11 +228,16 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     fun loadUserData(promise: Promise) {
         if (session.loaded) {
             runOnV8Thread {
-                val userData = session.loadUserData()
-                if (userData != null) {
-                    promise.resolve(convertJsonToMap(userData.json))
-                } else {
-                    promise.reject("NOT_SIGNED_IN", "Not signed in")
+                try {
+                    val userData = session.loadUserData()
+                    if (userData != null) {
+                        promise.resolve(convertJsonToMap(userData.json))
+                    } else {
+                        promise.reject("NOT_SIGNED_IN", "Not signed in")
+                    }
+                } catch (e: Exception) {
+                    Log.d(name, "Error in loadUserData: " + e.toString())
+                    promise.reject(e)
                 }
             }
         } else {
@@ -221,16 +249,21 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     fun putFile(path: String, content: String, optionsArg: ReadableMap, promise: Promise) {
         if (canUseBlockstack()) {
             runOnV8Thread {
-                val options = PutFileOptions(optionsArg.getBoolean("encrypt"))
-                session.putFile(path, content, options) {
-                    Log.d("RNBlockstackSdkModule", "putFile result")
-                    if (it.hasValue) {
-                        val map = Arguments.createMap()
-                        map.putString("fileUrl", it.value)
-                        promise.resolve(map)
-                    } else {
-                        promise.reject("0", it.error)
+                try {
+                    val options = PutFileOptions(optionsArg.getBoolean("encrypt"))
+                    session.putFile(path, content, options) {
+                        Log.d("RNBlockstackSdkModule", "putFile result")
+                        if (it.hasValue) {
+                            val map = Arguments.createMap()
+                            map.putString("fileUrl", it.value)
+                            promise.resolve(map)
+                        } else {
+                            promise.reject("0", it.error)
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.d(name, "Error in putFile: " + e.toString())
+                    promise.reject(e)
                 }
             }
         } else {
@@ -243,19 +276,24 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     fun getFile(path: String, optionsArg: ReadableMap, promise: Promise) {
         if (canUseBlockstack()) {
             runOnV8Thread {
-                val options = GetFileOptions(optionsArg.getBoolean("decrypt"))
-                session.getFile(path, options) {
-                    if (it.hasValue) {
-                        val map = Arguments.createMap()
-                        if (it.value is String) {
-                            map.putString("fileContents", it.value as String)
+                try {
+                    val options = GetFileOptions(optionsArg.getBoolean("decrypt"))
+                    session.getFile(path, options) {
+                        if (it.hasValue) {
+                            val map = Arguments.createMap()
+                            if (it.value is String) {
+                                map.putString("fileContents", it.value as String)
+                            } else {
+                                map.putString("fileContentsEncoded", Base64.encodeToString(it.value as ByteArray, Base64.NO_WRAP))
+                            }
+                            promise.resolve(map)
                         } else {
-                            map.putString("fileContentsEncoded", Base64.encodeToString(it.value as ByteArray, Base64.NO_WRAP))
+                            promise.reject("0", it.error)
                         }
-                        promise.resolve(map)
-                    } else {
-                        promise.reject("0", it.error)
                     }
+                } catch (e: Exception) {
+                    Log.d(name, "Error in getFile: " + e.toString())
+                    promise.reject(e)
                 }
             }
         } else {
@@ -268,15 +306,20 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     fun deleteFile(path: String, optionsArg: ReadableMap, promise: Promise) {
         if (canUseBlockstack()) {
             runOnV8Thread {
-                val options = DeleteFileOptions(optionsArg.getBoolean("wasSigned"))
-                session.deleteFile(path, options) {
-                    if (it.hasErrors) {
-                        promise.reject("0", it.error)
-                    } else {
-                        val map = Arguments.createMap()
-                        map.putBoolean("deleted", true)
-                        promise.resolve(map)
+                try {
+                    val options = DeleteFileOptions(optionsArg.getBoolean("wasSigned"))
+                    session.deleteFile(path, options) {
+                        if (it.hasErrors) {
+                            promise.reject("0", it.error)
+                        } else {
+                            val map = Arguments.createMap()
+                            map.putBoolean("deleted", true)
+                            promise.resolve(map)
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.d(name, "Error in deleteFile: " + e.toString())
+                    promise.reject(e)
                 }
             }
         } else {
@@ -292,21 +335,26 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
         // https://github.com/facebook/react-native/issues/14702
         if (canUseBlockstack()) {
             runOnV8Thread {
-                // list all files and return to JS just once
-                val files = ArrayList<String>()
-                session.listFiles({
-                    result: Result<String> ->
-                    result.value?.let { files.add(it) }
-                    true
-                }) {
-                    if (it.hasValue) {
-                        val map = Arguments.createMap()
-                        map.putArray("files", Arguments.fromList(files))
-                        it.value?.let { it1 -> map.putInt("fileCount", it1) }
-                        promise.resolve(map)
-                    } else {
-                        promise.reject("0", it.error)
+                try {
+                    // list all files and return to JS just once
+                    val files = ArrayList<String>()
+                    session.listFiles({
+                        result: Result<String> ->
+                        result.value?.let { files.add(it) }
+                        true
+                    }) {
+                        if (it.hasValue) {
+                            val map = Arguments.createMap()
+                            map.putArray("files", Arguments.fromList(files))
+                            it.value?.let { it1 -> map.putInt("fileCount", it1) }
+                            promise.resolve(map)
+                        } else {
+                            promise.reject("0", it.error)
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.d(name, "Error in listFiles: " + e.toString())
+                    promise.reject(e)
                 }
             }
         } else {
