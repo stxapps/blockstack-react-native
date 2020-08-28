@@ -12,7 +12,7 @@ import Blockstack
 @objc(RNBlockstackSdk)
 class RNBlockstackSdk: NSObject {
     
-    let defaultErrorCode = "0"
+    let defaultErrorCode = "RNBlockstackSdkError"
     var bridge: RCTBridge!
     
     private var config: [String: Any]?
@@ -26,79 +26,70 @@ class RNBlockstackSdk: NSObject {
         resolve(["signedIn": Blockstack.shared.isUserSignedIn()])
     }
     
-    // TODO: Do we need this?
     @objc public func createSession(_ config: NSDictionary?, resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         self.config = config as? [String: Any]
         self.isLoaded = true
         resolve(["loaded": self.isLoaded])
     }
     
-    // TODO: Handle as RCTResponseSenderBlock in iOS and Callback in Android
     @objc public func hasSession(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         resolve(["hasSession": self.isLoaded])
     }
     
-    // TODO: Remove reliance on session config.
     @objc public func signIn(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+
         guard let config = self.config,
             let redirectUrlString = config["redirectUrl"] as? String,
             let redirectURL = URL(string: redirectUrlString),
             let appDomainString = config["appDomain"] as? String,
             let appDomain = URL(string: appDomainString) else {
-                reject(self.defaultErrorCode, "Invalid session config", nil)
+                reject(self.defaultErrorCode, "Invalid Blockstack session config data", nil)
                 return
         }
+
         var manifestURI: URL?
         if let manifestPath = config["manifestUrl"] as? String {
             manifestURI = URL(string: manifestPath)
         }
-      let scopes = (config["scopes"] as? [String] ?? ["store_write"]).compactMap { AuthScope.fromString($0) }
-        // TODO: REJECT when cancelled or failed, and handle this in App.js
-      Blockstack.shared.signIn(redirectURI: redirectURL, appDomain: appDomain, manifestURI: manifestURI, scopes: scopes) { authResult in
-            var error: Any = NSNull()
-            let data: [String: Any]
+
+        let scopes = (config["scopes"] as? [String] ?? ["store_write"]).compactMap { AuthScope.fromString($0) }
+
+        Blockstack.shared.signIn(redirectURI: redirectURL, appDomain: appDomain, manifestURI: manifestURI, scopes: scopes) { authResult in
             switch authResult {
             case let .success(userData: userData):
-                data = [
+                let data = [
                     "result": "success",
                     "user_data": userData.dictionary ?? [],
                     "decentralizedID": userData.username ?? "",
                     "loaded": true,
-                ]
-                break
+                ] as [String : Any]
+                resolve(data)
+                return
             case let .failed(err):
-                // TODO: USE ERROR
-                error = err?.localizedDescription ?? "Error"
-                data = [
-                    "result": "failed",
-                ]
-                break
+                let errMsg = err?.localizedDescription ?? "Error"
+                reject(self.defaultErrorCode, errMsg, err)
+                return
             case .cancelled:
-                data = [
-                    "result": "cancelled"
-                ]
-                break
+                reject(self.defaultErrorCode, "signIn cancelled", nil)
+                return
             }
-            resolve([data])
         }
     }
 
-    // TODO: Do not use promise for this
     @objc public func signUserOut(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         Blockstack.shared.signUserOut()
         resolve(["signedOut": true])
     }
     
     @objc public func loadUserData(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+
         let userData = Blockstack.shared.loadUserData()
-        
-        guard let data = userData, var result = data.dictionary else {
-            resolve(["loaded": false, "decentralizedID": NSNull()])
+        guard userData != nil else {
+            reject(self.defaultErrorCode, "loadUserData returns nil", nil)
             return
         }
-        result["loaded"] = true
-        result["decentralizedID"] = data.username
-        resolve(result)
+
+        resolve(userData)
     }
     
     @objc public func putFile(_ fileName: String!, content: String!, options: NSDictionary?, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
@@ -118,18 +109,63 @@ class RNBlockstackSdk: NSObject {
         let decrypt = options?["decrypt"] as? Bool ?? true
         Blockstack.shared.getFile(at: path, decrypt: decrypt) {
             value, error in
+
+            guard error == nil else {
+                reject(self.defaultErrorCode, "getFile Error", error)
+                return
+            }
+            
             if decrypt {
                 guard let decryptedValue = value as? DecryptedValue else {
+                    reject(self.defaultErrorCode, "In getFile, options decrypt is true but value is not DecryptedValue.", error)
                     return
                 }
-                decryptedValue.isString ?
-                    resolve(["fileContents": decryptedValue.plainText ?? "Error"]) :
-                    resolve(["fileContentsEncoded": decryptedValue.bytes?.toBase64() ?? "Error"])
-            } else if let text = value as? String {
-                resolve(["fileContents": text])
+
+                if decryptedValue.isString {
+                    resolve(["fileContents": decryptedValue.plainText])
+                    return
+                }
+                
+                resolve(["fileContentsEncoded": decryptedValue.bytes?.toBase64()])
+                return
             }
+
+            resolve(["fileContents": value])
         }
-        
+    }
+
+    @objc public func deleteFile(_ path: String!, options: NSDictionary?, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+
+        let wasSigned = options?["wasSigned"] as? Bool ?? false
+        Blockstack.shared.deleteFile(at: path, wasSigned: wasSigned) {
+            error in
+
+            guard error == nil else {
+                reject(self.defaultErrorCode, "deleteFile Error", error)
+                return
+            }
+
+            resolve(["deleted": true])
+        }
+    }
+
+    @objc public func listFiles(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        // list all files and return to JS just once
+        var files = [String]()
+        func callback(_ result: String) -> Bool {
+            files.append(result)
+            return true
+        }
+        Blockstack.shared.listFiles(callback: callback) {
+            fileCount, error in
+
+            guard error == nil else {
+                reject(self.defaultErrorCode, "listFiles Error", error)
+                return
+            }
+
+            resolve(["files": files, "fileCount": fileCount])
+        }
     }
 }
 

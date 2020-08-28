@@ -82,7 +82,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
                     ?.toTypedArray()
 
             if (!configArg.hasKey("appDomain")) {
-                throw IllegalArgumentException("'appDomain' needed in config object")
+                promise.reject(IllegalArgumentException("'appDomain' needed in config object"))
             }
             val appDomain = configArg.getString("appDomain")
             val manifestPath = if (configArg.hasKey("manifestUrl")) {
