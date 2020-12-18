@@ -24,6 +24,16 @@ import org.json.JSONObject
 import java.net.URI
 
 class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext), LifecycleEventListener {
+
+    private var hostResumed: Int = -1
+    private lateinit var session: BlockstackSession
+    private lateinit var handler: Handler
+    private val handlerThread: HandlerThread = HandlerThread("blockstack-rn")
+
+    init {
+        reactContext.addLifecycleEventListener(this)
+    }
+
     override fun onHostResume() {
         hostResumed = 1
     }
@@ -42,15 +52,6 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     override fun getConstants(): MutableMap<String, Any> {
         val constants = HashMap<String, Any>()
         return constants
-    }
-
-    private var hostResumed: Int = -1
-    private lateinit var session: BlockstackSession
-    private lateinit var handler: Handler
-    private val handlerThread: HandlerThread = HandlerThread("blockstack-rn")
-
-    init {
-        reactContext.addLifecycleEventListener(this)
     }
 
     @ReactMethod
@@ -140,10 +141,6 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
             Log.d(name, "reject create session as the activity is null")
             promise.reject(IllegalStateException("must be called from an Activity"))
         }
-    }
-
-    private fun runOnV8Thread(function: () -> Unit) {
-        handler.post(function)
     }
 
     @ReactMethod
@@ -412,9 +409,11 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
         }
     }
 
+    private fun runOnV8Thread(function: () -> Unit) {
+        handler.post(function)
+    }
 
     private fun canUseBlockstack() = this::session.isInitialized && session.loaded
-
 
     @Throws(JSONException::class)
     private fun convertJsonToMap(jsonObject: JSONObject): WritableMap {
