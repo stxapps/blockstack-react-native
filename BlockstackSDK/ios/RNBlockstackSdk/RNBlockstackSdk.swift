@@ -24,7 +24,7 @@ class RNBlockstackSdk: NSObject {
         resolve(["loaded": self.isLoaded])
     }
 
-    @objc public func isUserSignedIn(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+    @objc public func isUserSignedIn(_ resolve: @escaping RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         DispatchQueue.global(qos: .userInitiated).async {
             resolve(["signedIn": Blockstack.shared.isUserSignedIn()])
         }
@@ -71,14 +71,14 @@ class RNBlockstackSdk: NSObject {
         }
     }
 
-    @objc public func signUserOut(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+    @objc public func signUserOut(_ resolve: @escaping RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         DispatchQueue.global(qos: .userInitiated).async {
             Blockstack.shared.signUserOut()
             resolve(["signedOut": true])
         }
     }
     
-    @objc public func loadUserData(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+    @objc public func loadUserData(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         DispatchQueue.global(qos: .userInitiated).async {
             let userData = Blockstack.shared.loadUserData()
             guard userData != nil else {
