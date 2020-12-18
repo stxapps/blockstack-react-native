@@ -21,6 +21,12 @@ class RNBlockstackSdk: NSObject {
     @objc public func createSession(_ config: NSDictionary?, resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         self.config = config as? [String: Any]
         self.isLoaded = true
+
+        // blockstack-ios uses Google Promises that by default, resolve and reject are dispatched to run in main queue.
+        // If long running tasks i.e. decrypt, UI will hault. So change to global queue instead.
+        // github.com/google/promises/blob/master/g3doc/index.md#default-dispatch-queue
+        DispatchQueue.promises = .global()
+
         resolve(["loaded": self.isLoaded])
     }
 
