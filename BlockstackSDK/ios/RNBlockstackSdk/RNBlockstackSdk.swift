@@ -24,7 +24,10 @@ class RNBlockstackSdk: NSObject {
 
         // blockstack-ios uses Google Promises that by default, resolve and reject are dispatched to run in main queue.
         // If long running tasks i.e. decrypt, UI will hault. So change to global queue instead.
-        // github.com/google/promises/blob/master/g3doc/index.md#default-dispatch-queue
+        // https://github.com/google/promises/blob/master/g3doc/index.md#default-dispatch-queue
+        //
+        // DispatchQueue is global variable, affect every native modules that use Google Promises.
+        // Should be fine but might be better to set this in AppDelegate.m.
         DispatchQueue.promises = .global()
 
         resolve(["loaded": self.isLoaded])
