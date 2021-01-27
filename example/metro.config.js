@@ -1,17 +1,11 @@
-const path = require('path');
-const blacklist = require('metro-config/src/defaults/blacklist');
+/**
+ * Metro configuration for React Native
+ * https://github.com/facebook/react-native
+ *
+ * @format
+ */
 
 module.exports = {
-  watchFolders: [
-    path.resolve(__dirname, `../BlockstackSDK`),
-  ],
-  resolver:{
-    blacklistRE: blacklist([
-      /nodejs-assets\/.*/,
-      /android\/.*/,
-      /ios\/.*/
-    ])
-  },
   transformer: {
     getTransformOptions: async () => ({
       transform: {
@@ -19,5 +13,5 @@ module.exports = {
         inlineRequires: false,
       },
     }),
-  }
+  },
 };

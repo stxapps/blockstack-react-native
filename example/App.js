@@ -1,245 +1,219 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow
- */
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet, ScrollView, View, Text, TouchableOpacity, Linking,
+} from 'react-native';
 
-import React, { Component } from "react";
-import { Platform } from "react-native";
-import { StyleSheet, Button, Text, View, Linking } from "react-native";
-import { DeviceEventEmitter } from "react-native";
+import RNBlockstackSdk from 'react-native-blockstack';
 
-import RNBlockstackSdk from "react-native-blockstack";
-const textFileName = "message.txt";
+const App = (props) => {
 
-type Props = {};
-export default class App extends Component<Props> {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loaded: false,
-      userData: null,
-      fileContents: null,
-      fileUrl: null,
-      encryptionStatus: ""
-    };
-  }
+  const [state, setState] = useState({
+    loaded: false,
+    userData: null,
+    fileUrl: null,
+    fileContents: null,
+  });
 
-  componentDidMount() {
-    console.log("didMount");
-    console.log("props" + JSON.stringify(this.props));
-    this.createSession();
+  const createSession = async () => {
 
-    var app = this;
-    var pendingAuth = false;
-    DeviceEventEmitter.addListener("url", function(e: Event) {
-      console.log("deep link " + pendingAuth);
-      if (e.url && !pendingAuth) {
-        pendingAuth = true;
-        var query = e.url.split(":");
-        if (query.length > 1) {
-          var parts = query[1].split("=");
-          if (parts.length > 1) {
-            console.log("deep link " + parts[1]);
-            RNBlockstackSdk.handlePendingSignIn(parts[1]).then(
-              function(result) {
-                console.log("handleAuthResponse " + JSON.stringify(result));
-                app.setState({
-                  userData: { decentralizedID: result["decentralizedID"] },
-                  loaded: result["loaded"]
-                });
-                pendingAuth = false;
-              },
-              function(error) {
-                console.log("handleAuthResponse " + JSON.stringify(error));
-                pendingAuth = false;
-              }
-            );
-          }
-        }
+    console.log('blockstack:' + RNBlockstackSdk);
+
+    const hasSession = await RNBlockstackSdk.hasSession();
+    if (!hasSession['hasSession']) {
+      const config = {
+        appDomain: 'https://flamboyant-darwin-d11c17.netlify.app',
+        scopes: ['store_write'],
+        redirectUrl: '/redirect.html'
+      };
+      const result = await RNBlockstackSdk.createSession(config);
+      console.log('created ' + result['loaded']);
+    } else {
+      console.log('reusing session');
+    }
+    setState(prevState => ({ ...prevState, loaded: true }));
+
+    if (props.authResponse) {
+      const result = await RNBlockstackSdk.handleAuthResponse(props.authResponse);
+      console.log('userData ' + JSON.stringify(result));
+      setState(prevState => ({
+        ...prevState,
+        userData: { decentralizedID: result['decentralizedID'] },
+      }));
+    } else {
+      const signedIn = await RNBlockstackSdk.isUserSignedIn();
+      if (signedIn['signedIn']) {
+        console.log('user is signed in');
+        const userData = await RNBlockstackSdk.loadUserData();
+        console.log('userData ' + JSON.stringify(userData));
+        setState(prevState => ({
+          ...prevState,
+          userData: { decentralizedID: userData['decentralizedID'] },
+        }));
       }
-    });
-  }
-
-  render() {
-    if (this.state.userData) {
-      signInText = "Signed in as " + this.state.userData.decentralizedID;
-    } else {
-      signInText = "Not signed in";
     }
+  };
 
-    return (
-      <View style={styles.container}>
-        <Text tyle={styles.welcome}>Blockstack React Native Example</Text>
+  const signUp = () => {
+    console.log('signUp');
+    RNBlockstackSdk.signUp();
+  };
 
-        <Button
-          title="Sign In with Blockstack"
-          onPress={() => this.signIn()}
-          disabled={!this.state.loaded || this.state.userData != null}
-        />
-        <Text>{signInText}</Text>
+  const signIn = () => {
+    console.log('signIn');
+    RNBlockstackSdk.signIn();
+  };
 
-        <Button
-          title="Sign out"
-          onPress={() => this.signOut()}
-          disabled={!this.state.loaded || this.state.userData == null}
-        />
-        <Text>------------</Text>
-
-        <Button
-          title="Put file"
-          onPress={() => this.putFile()}
-          disabled={!this.state.loaded || this.state.userData == null}
-        />
-        <Text>{this.state.fileUrl}</Text>
-
-        <Button
-          title="Get file"
-          onPress={() => this.getFile()}
-          disabled={!this.state.loaded || this.state.userData == null}
-        />
-        <Text>{this.state.fileContents}</Text>
-
-        {// Implementation of encryptContent, decryptContent available only in the android native module as of now.
-        Platform.OS === "android" && (
-          <View>
-            <Button
-              title="Encrypt-Decrypt"
-              onPress={() => this.encryptDecrypt()}
-              disabled={!this.state.loaded || this.state.userData == null}
-            />
-            <Text>Encryption status: {this.state.encryptionStatus}</Text>
-          </View>
-        )}
-      </View>
-    );
-  }
-
-  async createSession() {
-    config = {
-      appDomain: "https://flamboyant-darwin-d11c17.netlify.com",
-      scopes: ["store_write"],
-      redirectUrl: "/redirect.html"
-    };
-    console.log("blockstack:" + RNBlockstackSdk);
-    hasSession = await RNBlockstackSdk.hasSession();
-    if (!hasSession["hasSession"]) {
-      result = await RNBlockstackSdk.createSession(config);
-      console.log("created " + result["loaded"]);
-    } else {
-      console.log("reusing session");
+  const handlePendingSignIn = async (url) => {
+    console.log('handlePendingSignIn');
+    const query = url.split(':');
+    if (query.length > 1) {
+      const parts = query[1].split('=');
+      if (parts.length > 1) {
+        console.log('deep link ' + parts[1]);
+        const result = await RNBlockstackSdk.handlePendingSignIn(parts[1]);
+        console.log('handleAuthResponse ' + JSON.stringify(result));
+        setState(prevState => ({
+          ...prevState,
+          userData: { decentralizedID: result['decentralizedID'] },
+        }));
+      }
     }
+  };
 
-    if (this.props.authResponse) {
-      result = await RNBlockstackSdk.handleAuthResponse(
-        this.props.authResponse
-      );
-      console.log("userData " + JSON.stringify(result));
-      this.setState({
-        userData: { decentralizedID: result["decentralizedID"] },
-        loaded: result["loaded"]
+  const signOut = async () => {
+    console.log('signOut');
+    const result = await RNBlockstackSdk.signUserOut();
+
+    console.log(JSON.stringify(result));
+    if (result['signedOut']) {
+      setState(prevState => ({ ...prevState, userData: null }));
+    }
+  };
+
+  const putFile = async () => {
+    console.log('putFile');
+    setState(prevState => ({ ...prevState, fileUrl: 'uploading...' }));
+
+    const fname = 'message.txt';
+    const content = 'Hello React Native';
+    const options = { encrypt: true };
+    const result = await RNBlockstackSdk.putFile(fname, content, options);
+    console.log(JSON.stringify(result));
+    setState(prevState => ({ ...prevState, fileUrl: result['fileUrl'] }));
+  };
+
+  const getFile = async () => {
+    console.log('getFile');
+    setState(prevState => ({ ...prevState, fileContents: 'downloading...' }));
+
+    try {
+      const fname = 'message.txt';
+      const options = { decrypt: true };
+      const result = await RNBlockstackSdk.getFile(fname, options);
+      console.log(JSON.stringify(result));
+      setState(prevState => ({ ...prevState, fileContents: result['fileContents'] }));
+    } catch (e) {
+      console.log(e);
+      setState(prevState => ({ ...prevState, fileContents: 'No file or error' }));
+    }
+  };
+
+  const deleteFile = async () => {
+    console.log('deleteFile');
+    setState(prevState => ({
+      ...prevState,
+      fileUrl: 'deleting...',
+      fileContents: 'deleting...',
+    }));
+
+    const fname = 'message.txt';
+    const options = { wasSigned: false };
+    const result = await RNBlockstackSdk.deleteFile(fname, options);
+    console.log(JSON.stringify(result));
+    setState(prevState => ({ ...prevState, fileUrl: null, fileContents: null }));
+  };
+
+  const listFiles = async () => {
+    console.log('listFiles');
+
+    const result = await RNBlockstackSdk.listFiles();
+    console.log(JSON.stringify(result));
+  };
+
+  useEffect(() => {
+    async function init() {
+      await createSession();
+
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) await handlePendingSignIn(initialUrl);
+
+      Linking.addEventListener('url', async (e) => {
+        await handlePendingSignIn(e.url);
       });
-    } else {
-      var signedIn = await RNBlockstackSdk.isUserSignedIn();
-      if (signedIn["signedIn"]) {
-        console.log("user is signed in");
-        var userData = await RNBlockstackSdk.loadUserData();
-        console.log("userData " + JSON.stringify(userData));
-        this.setState({
-          userData: { decentralizedID: userData["decentralizedID"] },
-          loaded: result["loaded"]
-        });
-      } else {
-        this.setState({ loaded: result["loaded"] });
-      }
     }
-  }
+    init();
+  }, []);
 
-  async signIn() {
-    console.log("signIn");
-    console.log("current state: " + JSON.stringify(this.state));
-    result = await RNBlockstackSdk.signIn();
+  let signInText;
+  if (state.userData) signInText = 'Signed in as ' + state.userData.decentralizedID;
+  else signInText = 'Not signed in';
 
-    console.log("result: " + JSON.stringify(result));
-    this.setState({ userData: { decentralizedID: result["decentralizedID"] } });
-  }
-
-  async signOut() {
-    result = await RNBlockstackSdk.signUserOut();
-
-    console.log(JSON.stringify(result));
-    if (result["signedOut"]) {
-      this.setState({ userData: null });
-    }
-  }
-
-  async putFile() {
-    this.setState({ fileUrl: "uploading..." });
-    content = "Hello React Native";
-    options = { encrypt: false };
-    result = await RNBlockstackSdk.putFile(textFileName, content, options);
-    console.log(JSON.stringify(result));
-    this.setState({ fileUrl: result["fileUrl"] });
-  }
-
-  async encryptDecrypt() {
-    var content = "Blockstack is awesome!";
-
-    // using app public, private keys
-    var cipherText = await RNBlockstackSdk.encryptContent(content, {});
-    console.log("ciphertext:", cipherText);
-    var plainText = await RNBlockstackSdk.decryptContent(
-      JSON.stringify(cipherText),
-      false,
-      {}
-    );
-    console.log("plaintext:", plainText);
-
-    // using provided keys
-    var ecPrivateKey =
-      "a5c61c6ca7b3e7e55edee68566aeab22e4da26baa285c7bd10e8d2218aa3b229";
-    var ecPublicKey =
-      "027d28f9951ce46538951e3697c62588a87f1f1f295de4a14fdd4c780fc52cfe69";
-    cipherText = await RNBlockstackSdk.encryptContent(content, {
-      publicKey: ecPublicKey
-    });
-    console.log("ciphertext:", cipherText);
-    var plainText = await RNBlockstackSdk.decryptContent(
-      JSON.stringify(cipherText),
-      false,
-      { privateKey: ecPrivateKey }
-    );
-    console.log("plaintext:", plainText);
-
-    if (content == plainText) this.setState({ encryptionStatus: "SUCCESS" });
-  }
-
-  async getFile() {
-    this.setState({ fileContents: "downloading..." });
-    options = { decrypt: false };
-    result = await RNBlockstackSdk.getFile(textFileName, options);
-    console.log(JSON.stringify(result));
-    this.setState({ fileContents: result["fileContents"] });
-  }
-}
+  return (
+    <View style={styles.container}>
+      <Text style={styles.welcome}>Blockstack React Native Example</Text>
+      <TouchableOpacity onPress={() => signUp()} disabled={!state.loaded || state.userData != null} style={styles.button}>
+        <Text style={styles.buttonText}>Sign up</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => signIn()} disabled={!state.loaded || state.userData != null} style={styles.button}>
+        <Text style={styles.buttonText}>Sign In</Text>
+      </TouchableOpacity>
+      <Text>{signInText}</Text>
+      <TouchableOpacity onPress={() => signOut()} disabled={!state.loaded || state.userData == null} style={styles.button}>
+        <Text style={styles.buttonText}>Sign out</Text>
+      </TouchableOpacity>
+      <Text>------------</Text>
+      <TouchableOpacity onPress={() => putFile()} disabled={!state.loaded || state.userData == null} style={styles.button}>
+        <Text style={styles.buttonText}>Put file</Text>
+      </TouchableOpacity>
+      <Text>{state.fileUrl}</Text>
+      <TouchableOpacity onPress={() => getFile()} disabled={!state.loaded || state.userData == null} style={styles.button}>
+        <Text style={styles.buttonText}>Get file</Text>
+      </TouchableOpacity>
+      <Text>{state.fileContents}</Text>
+      <TouchableOpacity onPress={() => deleteFile()} disabled={!state.loaded || state.userData == null} style={styles.button}>
+        <Text style={styles.buttonText}>Delete file</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => listFiles()} disabled={!state.loaded || state.userData == null} style={styles.button}>
+        <Text style={styles.buttonText}>List files</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F5FCFF"
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5FCFF'
   },
   welcome: {
-    fontSize: 20,
-    textAlign: "center",
+    fontSize: 24,
+    textAlign: 'center',
     margin: 10
   },
-  instructions: {
-    textAlign: "center",
-    color: "#333333",
-    marginBottom: 5
-  }
+  button: {
+    backgroundColor: '#333333',
+    margin: 4,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingLeft: 12,
+    paddingRight: 12,
+  },
+  buttonText: {
+    fontSize: 16,
+    color: 'white',
+  },
 });
+
+export default App;
