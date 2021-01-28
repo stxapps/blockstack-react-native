@@ -15,7 +15,7 @@ Pod::Spec.new do |s|
   # optional - use expanded license entry instead:
   # s.license    = { :type => "MIT", :file => "LICENSE" }
   s.authors      = { "Your Name" => "Your Email" }
-  s.platforms    = { :ios => "9.0" }
+  s.platforms    = { :ios => "11.0" }
   s.source       = { :git => "https://github.com/blockstack/blockstack-react-native.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,c,m,swift}"

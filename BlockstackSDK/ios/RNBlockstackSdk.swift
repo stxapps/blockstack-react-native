@@ -8,19 +8,17 @@ class RNBlockstackSdk: NSObject {
     var bridge: RCTBridge!
     
     private var config: [String: Any]?
-    private var isLoaded = false
   
     @objc static func requiresMainQueueSetup() -> Bool {
         return false
     }
 
     @objc public func hasSession(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
-        resolve(["hasSession": self.isLoaded])
+        resolve(["hasSession": self.config != nil])
     }
 
     @objc public func createSession(_ config: NSDictionary?, resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         self.config = config as? [String: Any]
-        self.isLoaded = true
 
         // blockstack-ios uses Google Promises that by default, resolve and reject are dispatched to run in main queue.
         // If long running tasks i.e. decrypt, UI will hault. So change to global queue instead.
@@ -30,7 +28,7 @@ class RNBlockstackSdk: NSObject {
         // Should be fine but might be better to set this in AppDelegate.m.
         DispatchQueue.promises = .global()
 
-        resolve(["loaded": self.isLoaded])
+        resolve(["loaded": true])
     }
 
     @objc public func isUserSignedIn(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {

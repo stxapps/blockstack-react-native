@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  StyleSheet, ScrollView, View, Text, TouchableOpacity, Linking,
+  StyleSheet, ScrollView, View, Text, TouchableOpacity, Linking, Platform,
 } from 'react-native';
 
 import RNBlockstackSdk from 'react-native-blockstack';
@@ -13,6 +13,11 @@ const App = (props) => {
     fileUrl: null,
     fileContents: null,
   });
+
+  const getDecentralizedID = (result) => {
+    if (Platform.OS === 'ios') return result['iss'];
+    return result['decentralizedID'];
+  };
 
   const createSession = async () => {
 
@@ -32,35 +37,60 @@ const App = (props) => {
     }
     setState(prevState => ({ ...prevState, loaded: true }));
 
-    if (props.authResponse) {
-      const result = await RNBlockstackSdk.handleAuthResponse(props.authResponse);
-      console.log('userData ' + JSON.stringify(result));
+    const signedIn = await RNBlockstackSdk.isUserSignedIn();
+    if (signedIn['signedIn']) {
+      console.log('user is signed in');
+      const userData = await RNBlockstackSdk.loadUserData();
+      console.log('userData ' + JSON.stringify(userData));
       setState(prevState => ({
         ...prevState,
-        userData: { decentralizedID: result['decentralizedID'] },
+        userData: { decentralizedID: getDecentralizedID(userData) },
       }));
-    } else {
-      const signedIn = await RNBlockstackSdk.isUserSignedIn();
-      if (signedIn['signedIn']) {
-        console.log('user is signed in');
+    }
+  };
+
+  const signUp = async () => {
+    console.log('signUp');
+    try {
+      await RNBlockstackSdk.signUp();
+
+      // If Android, app will be called with deep link and need to call handlePendingSignIn in useEffect -> initialUrl or Linking listener to url
+      //   The app will continue from there, not below.
+      // If iOS, handlePendingSignIn is called by blockstack-ios, no need to call manually. After completion, the app will continue below.
+      if (Platform.OS === 'ios') {
+        console.log('signUp successfully');
         const userData = await RNBlockstackSdk.loadUserData();
         console.log('userData ' + JSON.stringify(userData));
         setState(prevState => ({
           ...prevState,
-          userData: { decentralizedID: userData['decentralizedID'] },
+          userData: { decentralizedID: getDecentralizedID(userData) },
         }));
       }
+    } catch (error) {
+      // If user close the window, there will be an error:
+      //   The operation couldn’t be completed.
+      console.log(error)
     }
   };
 
-  const signUp = () => {
-    console.log('signUp');
-    RNBlockstackSdk.signUp();
-  };
-
-  const signIn = () => {
+  const signIn = async () => {
     console.log('signIn');
-    RNBlockstackSdk.signIn();
+    try {
+      await RNBlockstackSdk.signIn();
+      if (Platform.OS === 'ios') {
+        console.log('signIn successfully');
+        const userData = await RNBlockstackSdk.loadUserData();
+        console.log('userData ' + JSON.stringify(userData));
+        setState(prevState => ({
+          ...prevState,
+          userData: { decentralizedID: getDecentralizedID(userData) },
+        }));
+      }
+    } catch (error) {
+      // If user close the window, there will be an error:
+      //   The operation couldn’t be completed.
+      console.log(error)
+    }
   };
 
   const handlePendingSignIn = async (url) => {
@@ -74,7 +104,7 @@ const App = (props) => {
         console.log('handleAuthResponse ' + JSON.stringify(result));
         setState(prevState => ({
           ...prevState,
-          userData: { decentralizedID: result['decentralizedID'] },
+          userData: { decentralizedID: getDecentralizedID(result) },
         }));
       }
     }
@@ -141,7 +171,7 @@ const App = (props) => {
   };
 
   useEffect(() => {
-    async function init() {
+    const init = async () => {
       await createSession();
 
       const initialUrl = await Linking.getInitialURL();
@@ -150,7 +180,7 @@ const App = (props) => {
       Linking.addEventListener('url', async (e) => {
         await handlePendingSignIn(e.url);
       });
-    }
+    };
     init();
   }, []);
 
