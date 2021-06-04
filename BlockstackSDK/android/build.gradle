@@ -56,5 +56,5 @@ dependencies {
     implementation 'com.facebook.react:react-native:+'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2'
-    implementation 'com.github.bracedotto:blockstack-android:4de3f5bc33'
+    implementation 'com.github.bracedotto:blockstack-android:2a6a752a5b'
 }
