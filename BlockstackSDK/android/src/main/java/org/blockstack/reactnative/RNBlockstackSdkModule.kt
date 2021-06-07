@@ -281,7 +281,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
             Log.d(name, "reject list files")
             promise.reject(IllegalStateException("in listFiles, session is null"))
         }
-        Log.d(name, "RNBlockstackSdkModule listFiles called")
+
         CoroutineScope(Dispatchers.IO).launch {
             // list all files and return to JS just once
             val files = ArrayList<String>()
