@@ -28,7 +28,8 @@ const App = (props) => {
       const config = {
         appDomain: 'https://flamboyant-darwin-d11c17.netlify.app',
         scopes: ['store_write'],
-        redirectUrl: '/redirect.html'
+        redirectUrl: '/redirect.html',
+        callbackUrlScheme: 'blockstacksample',
       };
       const result = await RNBlockstackSdk.createSession(config);
       console.log('created ' + result['loaded']);

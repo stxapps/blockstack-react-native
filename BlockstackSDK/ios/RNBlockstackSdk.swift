@@ -49,7 +49,8 @@ class RNBlockstackSdk: NSObject {
               let appDomainString = config["appDomain"] as? String,
               let appDomain = URL(string: appDomainString),
               let redirectUrlString = config["redirectUrl"] as? String,
-              let redirectURL = URL(string: redirectUrlString, relativeTo: appDomain) else {
+              let redirectURL = URL(string: redirectUrlString, relativeTo: appDomain),
+              let callbackUrlScheme = config["callbackUrlScheme"] as? String else {
             reject(self.defaultErrorCode, "Invalid Blockstack session config data", nil)
             return
         }
@@ -61,7 +62,7 @@ class RNBlockstackSdk: NSObject {
 
         let scopes = (config["scopes"] as? [String] ?? ["store_write"]).compactMap { AuthScope.fromString($0) }
 
-        Blockstack.shared.signIn(redirectURI: redirectURL, appDomain: appDomain, manifestURI: manifestURI, scopes: scopes, sendToSignIn: sendToSignIn) { authResult in
+        Blockstack.shared.signIn(redirectURI: redirectURL, appDomain: appDomain, manifestURI: manifestURI, scopes: scopes, sendToSignIn: sendToSignIn, callbackUrlScheme: callbackUrlScheme) { authResult in
             switch authResult {
             case let .success(userData: userData):
                 let data = [
