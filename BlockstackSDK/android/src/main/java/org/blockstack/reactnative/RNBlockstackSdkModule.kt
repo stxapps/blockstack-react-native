@@ -216,7 +216,11 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
         }
 
         CoroutineScope(Dispatchers.IO).launch {
-            val options = PutFileOptions(optionsArg.getBoolean("encrypt"))
+            val encrypt = optionsArg.getBoolean("encrypt")
+            val options = if (optionsArg.hasKey("dir")) {
+                PutFileOptions(encrypt, dir = optionsArg.getString("dir")!!)
+            } else PutFileOptions(encrypt)
+
             val res = session!!.putFile(path, content, options)
             if (res.hasValue) {
                 val map = Arguments.createMap()
@@ -236,7 +240,11 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
         }
 
         CoroutineScope(Dispatchers.IO).launch {
-            val options = GetFileOptions(optionsArg.getBoolean("decrypt"))
+            val decrypt = optionsArg.getBoolean("decrypt")
+            val options = if (optionsArg.hasKey("dir")) {
+                GetFileOptions(decrypt, dir = optionsArg.getString("dir")!!)
+            } else GetFileOptions(decrypt)
+
             val res = session!!.getFile(path, options)
             if (res.hasValue) {
                 val map = Arguments.createMap()
