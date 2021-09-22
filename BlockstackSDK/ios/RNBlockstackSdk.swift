@@ -103,7 +103,8 @@ class RNBlockstackSdk: NSObject {
     @objc public func putFile(_ fileName: String!, content: String!, options: NSDictionary?, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         let encrypt = options?["encrypt"] as? Bool ?? true
         let escapedFileName = fileName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!
-        Blockstack.shared.putFile(to: escapedFileName, text: content, encrypt: encrypt) { result, error in
+        let dir = options?["dir"] as? String ?? ""
+        Blockstack.shared.putFile(to: escapedFileName, text: content, encrypt: encrypt, dir: dir) { result, error in
             guard let fileUrl = result, error == nil else {
                 reject(self.defaultErrorCode, "putFile Error", error)
                 return
@@ -117,7 +118,8 @@ class RNBlockstackSdk: NSObject {
         // let username = options?["username"] as? String
         let decrypt = options?["decrypt"] as? Bool ?? true
         let escapedPath = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!
-        Blockstack.shared.getFile(at: escapedPath, decrypt: decrypt) {
+        let dir = options?["dir"] as? String ?? ""
+        Blockstack.shared.getFile(at: escapedPath, decrypt: decrypt, dir: dir) {
             value, error in
 
             guard error == nil else {

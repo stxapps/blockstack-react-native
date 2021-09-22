@@ -6,7 +6,7 @@ platform :ios, '11.0'
 target 'example' do
 
   pod 'PromisesObjC', :modular_headers => true
-  pod 'Blockstack', :git => 'https://github.com/bracedotto/blockstack-ios.git', :commit => 'aa22663'
+  pod 'Blockstack', :git => 'https://github.com/bracedotto/blockstack-ios.git', :commit => '9cbf85e'
 
   config = use_native_modules!
 
@@ -21,7 +21,7 @@ target 'example' do
   #
   # Note that if you have use_frameworks! enabled, Flipper will not work and
   # you should disable these next few lines.
-  use_flipper!
+  use_flipper!({ 'Flipper' => '0.95.0' })
   post_install do |installer|
     flipper_post_install(installer)
   end
