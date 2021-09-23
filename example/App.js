@@ -5,6 +5,8 @@ import {
 
 import RNBlockstackSdk from 'react-native-blockstack';
 
+const fname = 'my message/message.txt';
+
 const App = (props) => {
 
   const [state, setState] = useState({
@@ -125,7 +127,7 @@ const App = (props) => {
     console.log('putFile');
     setState(prevState => ({ ...prevState, fileUrl: 'uploading...' }));
 
-    const fname = 'message.txt';
+    //const fname = 'message.txt';
     const content = 'Hello React Native';
     const options = { encrypt: true };
     const result = await RNBlockstackSdk.putFile(fname, content, options);
@@ -138,7 +140,7 @@ const App = (props) => {
     setState(prevState => ({ ...prevState, fileContents: 'downloading...' }));
 
     try {
-      const fname = 'message.txt';
+      //const fname = 'message.txt';
       const options = { decrypt: true };
       const result = await RNBlockstackSdk.getFile(fname, options);
       console.log(JSON.stringify(result));
@@ -157,7 +159,7 @@ const App = (props) => {
       fileContents: 'deleting...',
     }));
 
-    const fname = 'message.txt';
+    //const fname = 'message.txt';
     const options = { wasSigned: false };
     const result = await RNBlockstackSdk.deleteFile(fname, options);
     console.log(JSON.stringify(result));

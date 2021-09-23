@@ -102,9 +102,8 @@ class RNBlockstackSdk: NSObject {
     
     @objc public func putFile(_ fileName: String!, content: String!, options: NSDictionary?, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
         let encrypt = options?["encrypt"] as? Bool ?? true
-        let escapedFileName = fileName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!
         let dir = options?["dir"] as? String ?? ""
-        Blockstack.shared.putFile(to: escapedFileName, text: content, encrypt: encrypt, dir: dir) { result, error in
+        Blockstack.shared.putFile(to: fileName, text: content, encrypt: encrypt, dir: dir) { result, error in
             guard let fileUrl = result, error == nil else {
                 reject(self.defaultErrorCode, "putFile Error", error)
                 return
@@ -117,9 +116,8 @@ class RNBlockstackSdk: NSObject {
         // TODO: Support multiplayer
         // let username = options?["username"] as? String
         let decrypt = options?["decrypt"] as? Bool ?? true
-        let escapedPath = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!
         let dir = options?["dir"] as? String ?? ""
-        Blockstack.shared.getFile(at: escapedPath, decrypt: decrypt, dir: dir) {
+        Blockstack.shared.getFile(at: path, decrypt: decrypt, dir: dir) {
             value, error in
 
             guard error == nil else {
@@ -149,8 +147,7 @@ class RNBlockstackSdk: NSObject {
     @objc public func deleteFile(_ path: String!, options: NSDictionary?, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
 
         let wasSigned = options?["wasSigned"] as? Bool ?? false
-        let escapedPath = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)!
-        Blockstack.shared.deleteFile(at: escapedPath, wasSigned: wasSigned) {
+        Blockstack.shared.deleteFile(at: path, wasSigned: wasSigned) {
             error in
 
             guard error == nil else {
