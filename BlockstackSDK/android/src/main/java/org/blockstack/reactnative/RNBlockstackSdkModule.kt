@@ -7,7 +7,9 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.ReadableArray
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.ReadableType
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import kotlinx.coroutines.CoroutineScope
@@ -23,6 +25,7 @@ import org.blockstack.android.sdk.model.BlockstackConfig
 import org.blockstack.android.sdk.model.GetFileOptions
 import org.blockstack.android.sdk.model.PutFileOptions
 import org.blockstack.android.sdk.model.DeleteFileOptions
+import org.blockstack.android.sdk.model.UserData
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -188,6 +191,27 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
         } catch (e: Exception) {
             Log.d(name, "Error in signUserOut: $e")
             promise.reject(e)
+        }
+    }
+
+    @ReactMethod
+    fun updateUserData(userData: ReadableMap, promise: Promise) {
+        if (session == null) {
+            promise.reject("NOT_LOADED", "Session not loaded")
+            return
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                session!!.updateUserData(UserData(convertMapToJson(userData)))
+
+                val map = Arguments.createMap()
+                map.putBoolean("updated", true)
+                promise.resolve(map)
+            } catch (e: Exception) {
+                Log.d(name, "Error in updateUserData: $e")
+                promise.reject(e)
+            }
         }
     }
 
@@ -358,5 +382,63 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
             }
         }
         return array
+    }
+
+    private fun convertMapToJson(readableMap: ReadableMap): JSONObject {
+        val jsonObject = JSONObject()
+
+        val iterator = readableMap.keySetIterator();
+        while (iterator.hasNextKey()) {
+            val key = iterator.nextKey()
+            when (readableMap.getType(key)) {
+                ReadableType.Null -> {
+                    jsonObject.put(key, JSONObject.NULL);
+                }
+                ReadableType.Boolean -> {
+                    jsonObject.put(key, readableMap.getBoolean(key));
+                }
+                ReadableType.Number -> {
+                    jsonObject.put(key, readableMap.getDouble(key));
+                }
+                ReadableType.String -> {
+                    jsonObject.put(key, readableMap.getString(key));
+                }
+                ReadableType.Map -> {
+                    jsonObject.put(key, convertMapToJson(readableMap.getMap(key)!!));
+                }
+                ReadableType.Array -> {
+                    jsonObject.put(key, convertArrayToJson(readableMap.getArray(key)!!));
+                }
+            }
+        }
+        return jsonObject
+    }
+
+    private fun convertArrayToJson(readableArray: ReadableArray): JSONArray {
+        val jsonArray = JSONArray();
+
+        for (i in 0 until readableArray.size()) {
+            when (readableArray.getType(i)) {
+                ReadableType.Null -> {
+                    break
+                }
+                ReadableType.Boolean -> {
+                    jsonArray.put(readableArray.getBoolean(i));
+                }
+                ReadableType.Number -> {
+                    jsonArray.put(readableArray.getDouble(i));
+                }
+                ReadableType.String -> {
+                    jsonArray.put(readableArray.getString(i));
+                }
+                ReadableType.Map -> {
+                    jsonArray.put(convertMapToJson(readableArray.getMap(i)!!));
+                }
+                ReadableType.Array -> {
+                    jsonArray.put(convertArrayToJson(readableArray.getArray(i)!!));
+                }
+            }
+        }
+        return jsonArray
     }
 }

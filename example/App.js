@@ -173,6 +173,58 @@ const App = (props) => {
     console.log(JSON.stringify(result));
   };
 
+  const updateUserData = async () => {
+    /*const userData = {
+      "username": "",
+      "email": null,
+      "profile": {
+        "@type": "Person",
+        "@context": "http://schema.org",
+        "stxAddress": {}
+      },
+      "decentralizedID": "did:btc-addr:13YyiXjNC1sHTBP6YaTB6ew1FAiHpJE651",
+      "identityAddress": "13YyiXjNC1sHTBP6YaTB6ew1FAiHpJE651",
+      "appPrivateKey": "<value>",
+      "coreSessionToken": null,
+      "authResponseToken": null,
+      "hubUrl": "https://hub.blockstack.org",
+      "coreNode": null,
+      "gaiaAssociationToken": "<value>"
+    };*/
+    const userData = {
+      "username": "iiowmang.id.blockstack",
+      "email": null,
+      "profile": {
+        "@type": "Person",
+        "@context": "http://schema.org",
+        "image": [
+          {
+            "@type": "ImageObject",
+            "name": "avatar",
+            "contentUrl": "https://gaia.blockstack.org/hub/1Jkc9emzPhkGR1uG8s3Pe9CCPfWXL2UqCy//avatar-0"
+          }
+        ],
+        "stxAddress": {}
+      },
+      "decentralizedID": "did:btc-addr:1Jkc9emzPhkGR1uG8s3Pe9CCPfWXL2UqCy",
+      "identityAddress": "1Jkc9emzPhkGR1uG8s3Pe9CCPfWXL2UqCy",
+      "appPrivateKey": "<value>",
+      "coreSessionToken": null,
+      "authResponseToken": null,
+      "hubUrl": "https://hub.blockstack.org",
+      "coreNode": null,
+      "gaiaAssociationToken": "<value>"
+    };
+
+    const result = await RNBlockstackSdk.updateUserData(userData);
+    console.log(JSON.stringify(result));
+
+    setState(prevState => ({
+      ...prevState,
+      userData: { decentralizedID: getDecentralizedID(userData) },
+    }));
+  };
+
   useEffect(() => {
     const init = async () => {
       await createSession();
@@ -218,6 +270,10 @@ const App = (props) => {
       </TouchableOpacity>
       <TouchableOpacity onPress={() => listFiles()} disabled={!state.loaded || state.userData == null} style={styles.button}>
         <Text style={styles.buttonText}>List files</Text>
+      </TouchableOpacity>
+      <Text>------------</Text>
+      <TouchableOpacity onPress={() => updateUserData()} disabled={!state.loaded} style={styles.button}>
+        <Text style={styles.buttonText}>Update user data</Text>
       </TouchableOpacity>
     </View>
   );
