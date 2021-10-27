@@ -88,7 +88,25 @@ class RNBlockstackSdk: NSObject {
         Blockstack.shared.signUserOut()
         resolve(["signedOut": true])
     }
-    
+
+    @objc public func updateUserData(_ dict: NSDictionary!, resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+        do {
+            let mDict = dict.mutableCopy() as! NSMutableDictionary
+            mDict["iss"] = mDict["decentralizedID"]
+            mDict["private_key"] = mDict["appPrivateKey"]
+            mDict["public_keys"] = [mDict["identityAddress"]]
+
+            let jsonDecoder = JSONDecoder()
+            let data = try JSONSerialization.data(withJSONObject: mDict)
+            let userData = try jsonDecoder.decode(UserData.self, from: data)
+            
+            Blockstack.shared.updateUserData(userData: userData)
+            resolve(["updated": true])
+        } catch {
+            reject(self.defaultErrorCode, "updateUserData Error", error)
+        }
+    }
+
     @objc public func loadUserData(_ resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
 
         let userData = Blockstack.shared.loadUserData()

@@ -219,10 +219,14 @@ const App = (props) => {
     const result = await RNBlockstackSdk.updateUserData(userData);
     console.log(JSON.stringify(result));
 
-    setState(prevState => ({
-      ...prevState,
-      userData: { decentralizedID: getDecentralizedID(userData) },
-    }));
+    const isUserSignedIn = await RNBlockstackSdk.isUserSignedIn();
+    if (isUserSignedIn) {
+      const userData = await RNBlockstackSdk.loadUserData();
+      setState(prevState => ({
+        ...prevState,
+        userData: { decentralizedID: getDecentralizedID(userData) },
+      }));
+    }
   };
 
   useEffect(() => {

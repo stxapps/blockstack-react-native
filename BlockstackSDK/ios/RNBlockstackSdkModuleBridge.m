@@ -23,6 +23,8 @@ RCT_EXTERN_METHOD(signIn:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejec
 
 RCT_EXTERN_METHOD(signUserOut:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(updateUserData:(NSDictionary *)userData resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+
 RCT_EXTERN_METHOD(loadUserData:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 
 RCT_EXTERN_METHOD(putFile:(NSString *)fileName content:(NSString *)content options:(NSDictionary *)options resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
