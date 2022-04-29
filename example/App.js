@@ -229,6 +229,13 @@ const App = (props) => {
     }
   };
 
+  const signECDSA = async () => {
+    const privateKey = '';
+    const content = 'Privacy Security UX';
+    const result = await RNBlockstackSdk.signECDSA(privateKey, content);
+    console.log(JSON.stringify(result));
+  };
+
   useEffect(() => {
     const init = async () => {
       await createSession();
@@ -278,6 +285,9 @@ const App = (props) => {
       <Text>------------</Text>
       <TouchableOpacity onPress={() => updateUserData()} disabled={!state.loaded} style={styles.button}>
         <Text style={styles.buttonText}>Update user data</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => signECDSA()} disabled={!state.loaded} style={styles.button}>
+        <Text style={styles.buttonText}>Sign ECDSA</Text>
       </TouchableOpacity>
     </View>
   );

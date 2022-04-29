@@ -20,6 +20,7 @@ import org.blockstack.android.sdk.BlockstackSignIn
 import org.blockstack.android.sdk.Result
 import org.blockstack.android.sdk.Scope
 import org.blockstack.android.sdk.SessionStore
+import org.blockstack.android.sdk.ecies.signContent
 import org.blockstack.android.sdk.getBlockstackSharedPreferences
 import org.blockstack.android.sdk.model.BlockstackConfig
 import org.blockstack.android.sdk.model.GetFileOptions
@@ -328,6 +329,25 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
                 promise.resolve(map)
             } else {
                 promise.reject(Error(res.error?.toString()))
+            }
+        }
+    }
+
+    @ReactMethod
+    fun signECDSA(privateKey: String, content: String, promise: Promise) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // @stacks/encryption uses noble-secp256k1
+                //   and in noble-secp256k1/index.ts#L1148, default canonical is true.
+                val res = signContent(content, privateKey, true)
+
+                val map = Arguments.createMap()
+                map.putString("publicKey", res.publicKey)
+                map.putString("signature", res.signature)
+                promise.resolve(map)
+            } catch (e: Exception) {
+                Log.d(name, "Error in signECDSA: $e")
+                promise.reject(e)
             }
         }
     }
