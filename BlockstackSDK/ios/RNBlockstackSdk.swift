@@ -194,6 +194,18 @@ class RNBlockstackSdk: NSObject {
             resolve(["files": files, "fileCount": fileCount])
         })
     }
+
+    @objc public func signECDSA(_ privateKey: String!, content: String!, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        // @stacks/encryption uses noble-secp256k1
+        //   and in noble-secp256k1/index.ts#L1148, default canonical is true
+        let sigObj = Blockstack.signECDSA(privateKey: privateKey, content: content, canonical: true);
+        guard sigObj != nil else {
+            reject(self.defaultErrorCode, "signECDSA returns nil", nil)
+            return
+        }
+
+        resolve(sigObj.dictionary ?? [])
+    }
 }
 
 extension Encodable {

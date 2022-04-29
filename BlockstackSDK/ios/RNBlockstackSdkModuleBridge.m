@@ -35,4 +35,6 @@ RCT_EXTERN_METHOD(deleteFile:(NSString *)path options:(NSDictionary *)options re
 
 RCT_EXTERN_METHOD(listFiles:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(signECDSA:(NSString *)privateKey content:(NSString *)content resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+
 @end
