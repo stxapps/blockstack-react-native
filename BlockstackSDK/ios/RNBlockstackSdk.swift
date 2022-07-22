@@ -123,7 +123,8 @@ class RNBlockstackSdk: NSObject {
         let dir = options?["dir"] as? String ?? ""
         Blockstack.shared.putFile(to: fileName, text: content, encrypt: encrypt, dir: dir) { result, error in
             guard let fileUrl = result, error == nil else {
-                reject(self.defaultErrorCode, "putFile Error", error)
+                let errMsg = "putFile Error: " + (error?.localizedDescription ?? "")
+                reject(self.defaultErrorCode, errMsg, error)
                 return
             }
             resolve(["fileUrl": fileUrl])
@@ -139,13 +140,14 @@ class RNBlockstackSdk: NSObject {
             value, error in
 
             guard error == nil else {
-                reject(self.defaultErrorCode, "getFile Error", error)
+                let errMsg = "getFile Error: " + (error?.localizedDescription ?? "")
+                reject(self.defaultErrorCode, errMsg, error)
                 return
             }
             
             if decrypt {
                 guard let decryptedValue = value as? DecryptedValue else {
-                    reject(self.defaultErrorCode, "In getFile, options decrypt is true but value is not DecryptedValue.", error)
+                    reject(self.defaultErrorCode, "In getFile, options decrypt is true but value is not DecryptedValue.", nil)
                     return
                 }
 
@@ -169,7 +171,8 @@ class RNBlockstackSdk: NSObject {
             error in
 
             guard error == nil else {
-                reject(self.defaultErrorCode, "deleteFile Error", error)
+                let errMsg = "deleteFile Error: " + (error?.localizedDescription ?? "")
+                reject(self.defaultErrorCode, errMsg, error)
                 return
             }
 
@@ -187,7 +190,8 @@ class RNBlockstackSdk: NSObject {
         }, completion: { fileCount, error in
 
             guard error == nil else {
-                reject(self.defaultErrorCode, "listFiles Error", error)
+                let errMsg = "listFiles Error: " + (error?.localizedDescription ?? "")
+                reject(self.defaultErrorCode, errMsg, error)
                 return
             }
 
