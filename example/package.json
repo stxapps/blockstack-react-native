@@ -2,6 +2,9 @@
   "name": "example",
   "version": "0.0.1",
   "private": true,
+  "engines": {
+    "node": "16.x.x"
+  },
   "scripts": {
     "android": "react-native run-android",
     "ios-install": "npx pod-install",

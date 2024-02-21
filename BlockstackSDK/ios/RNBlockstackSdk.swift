@@ -180,6 +180,17 @@ class RNBlockstackSdk: NSObject {
         }
     }
 
+    @objc public func performFiles(_ pfData: String!, dir: String!, resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
+        Blockstack.shared.performFiles(pfData: pfData, dir: dir) { result, error in
+            guard let unResult = result, error == nil else {
+                let errMsg = "performFiles Error: " + (error?.localizedDescription ?? "")
+                reject(self.defaultErrorCode, errMsg, error)
+                return
+            }
+            resolve(unResult)
+        }
+    }
+
     @objc public func listFiles(_ resolve: @escaping RCTPromiseResolveBlock, reject: @escaping RCTPromiseRejectBlock) {
 
         // list all files and return to JS just once

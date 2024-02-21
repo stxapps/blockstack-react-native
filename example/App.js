@@ -166,6 +166,16 @@ const App = (props) => {
     setState(prevState => ({ ...prevState, fileUrl: null, fileContents: null }));
   };
 
+  const performFiles = async () => {
+    console.log('performFiles');
+
+    //const pfData = '{"values":[{"id":"1708491132374-hjJQ-qGLN-1708491136062","type":"putFile","path":"links/1707816556114-IeqP/1708491132374-hjJQ-qGLN-1708491136062.json","content":"{\\"id\\":\\"1708491132374-hjJQ-qGLN-1708491136062\\",\\"url\\":\\"www.lyft.com\\",\\"addedDT\\":1708491132374,\\"decor\\":{\\"image\\":{\\"bg\\":{\\"type\\":\\"image\\",\\"value\\":\\"/static/media/silver-framed-eyeglasses-beside-white-click-pen-and-white-notebook.43cbd30b.jpg\\"},\\"fg\\":null},\\"favicon\\":{\\"bg\\":{\\"type\\":\\"color\\",\\"value\\":\\"bg-teal-300\\"}}},\\"extractedResult\\":{\\"url\\":\\"http://www.lyft.com\\",\\"status\\":\\"EXTRACT_OK\\",\\"title\\":\\"Lyft: A ride whenever you need one\\",\\"image\\":\\"https://images.ctfassets.net/q8mvene1wzq4/3amVLJGrSSKSYmDbFOCn9C/f7133270e145473d34a76d583294841d/04__2x.png\\",\\"extractedDT\\":1705309222422}}"}],"isSequential":false,"nItemsForNs":10}';
+    //const pfData = '{"values":[{"values":[{"id":"images/1708491132374-hjJQ-vets-1708496809761.jpg","type":"putFile","path":"file://images/1708491132374-hjJQ-vets-1708496809761.jpg","content":""}],"isSequential":false,"nItemsForNs":10},{"id":"links/1707816556114-IeqP/1708491132374-hjJQ-UHxX-1708496809781.json","type":"putFile","path":"links/1707816556114-IeqP/1708491132374-hjJQ-UHxX-1708496809781.json","content":"{\\"id\\":\\"1708491132374-hjJQ-UHxX-1708496809781\\",\\"url\\":\\"www.lyft.com\\",\\"addedDT\\":1708491132374,\\"decor\\":{\\"image\\":{\\"bg\\":{\\"type\\":\\"image\\",\\"value\\":\\"/static/media/silver-framed-eyeglasses-beside-white-click-pen-and-white-notebook.43cbd30b.jpg\\"},\\"fg\\":null},\\"favicon\\":{\\"bg\\":{\\"type\\":\\"color\\",\\"value\\":\\"bg-teal-300\\"}}},\\"extractedResult\\":{\\"url\\":\\"http://www.lyft.com\\",\\"status\\":\\"EXTRACT_OK\\",\\"title\\":\\"Lyft: A ride whenever you need one\\",\\"image\\":\\"https://images.ctfassets.net/q8mvene1wzq4/3amVLJGrSSKSYmDbFOCn9C/f7133270e145473d34a76d583294841d/04__2x.png\\",\\"extractedDT\\":1705309222422},\\"custom\\":{\\"title\\":\\"Lyft --- bla bla bla\\",\\"image\\":\\"cdroot/images/1708491132374-hjJQ-vets-1708496809761.jpg\\"}}"}],"isSequential":true,"nItemsForNs":10}';
+    const pfData = '{"values":[{"values":[{"values":[],"isSequential":false,"nItemsForNs":10},{"values":[{"id":"links/1707816556114-IeqP/1708491132374-hjJQ-UHxX-1708496809781.json","type":"deleteFile","path":"links/1707816556114-IeqP/1708491132374-hjJQ-UHxX-1708496809781.json","doIgnoreDoesNotExistError":true}],"isSequential":false,"nItemsForNs":10}],"isSequential":true,"nItemsForNs":10}],"isSequential":false,"nItemsForNs":10}';
+    const results = await RNBlockstackSdk.performFiles(pfData, '');
+    console.log(results);
+  };
+
   const listFiles = async () => {
     console.log('listFiles');
 
@@ -278,6 +288,9 @@ const App = (props) => {
       <Text>{state.fileContents}</Text>
       <TouchableOpacity onPress={() => deleteFile()} disabled={!state.loaded || state.userData == null} style={styles.button}>
         <Text style={styles.buttonText}>Delete file</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => performFiles()} disabled={!state.loaded || state.userData == null} style={styles.button}>
+        <Text style={styles.buttonText}>Perform files</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => listFiles()} disabled={!state.loaded || state.userData == null} style={styles.button}>
         <Text style={styles.buttonText}>List files</Text>

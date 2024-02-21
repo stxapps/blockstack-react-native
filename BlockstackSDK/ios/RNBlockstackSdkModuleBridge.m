@@ -33,6 +33,8 @@ RCT_EXTERN_METHOD(getFile:(NSString *)path options:(NSDictionary *)options resol
 
 RCT_EXTERN_METHOD(deleteFile:(NSString *)path options:(NSDictionary *)options resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(performFiles:(NSString *)pfData dir:(NSString *)dir resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+
 RCT_EXTERN_METHOD(listFiles:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 
 RCT_EXTERN_METHOD(signECDSA:(NSString *)privateKey content:(NSString *)content resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)

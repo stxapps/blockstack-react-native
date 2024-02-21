@@ -262,6 +262,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
         if (session == null) {
             Log.d(name, "reject get file")
             promise.reject(IllegalStateException("In getFile, session is null"))
+            return
         }
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -290,6 +291,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
         if (session == null) {
             Log.d(name, "reject delete file")
             promise.reject(IllegalStateException("In deleteFile, session is null"))
+            return
         }
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -306,6 +308,24 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
     }
 
     @ReactMethod
+    fun performFiles(pfData: String, dir: String, promise: Promise) {
+        if (session == null) {
+            Log.d(name, "reject perform files")
+            promise.reject(IllegalStateException("In performFiles, session is null"))
+            return
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val res = session!!.performFiles(pfData, dir)
+            if (res.hasValue) {
+                promise.resolve(res.value)
+            } else {
+                promise.reject(Error(res.error?.toString()))
+            }
+        }
+    }
+
+    @ReactMethod
     fun listFiles(promise: Promise) {
         // React native only supports one promise or two callbacks
         //   and cannot mix them together.
@@ -313,6 +333,7 @@ class RNBlockstackSdkModule(reactContext: ReactApplicationContext) : ReactContex
         if (session == null) {
             Log.d(name, "reject list files")
             promise.reject(IllegalStateException("in listFiles, session is null"))
+            return
         }
 
         CoroutineScope(Dispatchers.IO).launch {
