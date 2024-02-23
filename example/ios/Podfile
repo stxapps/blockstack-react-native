@@ -1,12 +1,36 @@
 require_relative '../node_modules/react-native/scripts/react_native_pods'
 require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
 
-platform :ios, '11.0'
+platform :ios, '12.4'
+
+# Force pods to match minimum iOS version for React Native
+# Fixes build issue on Xcode Cloud where some pods
+# Use iOS 12 calls despite being set as iOS 11
+def __apply_Xcode_14_3_RC_post_install_workaround(installer)
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      current_target = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+      minimum_target = '12.4'
+      if current_target.to_f < minimum_target.to_f
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = minimum_target
+      end
+    end
+  end
+end
+
+def __apply_xcode_15_patch(installer)
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= '$(inherited) '
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << '"_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION" '
+    end
+  end
+end
 
 target 'example' do
 
   pod 'PromisesObjC', :modular_headers => true
-  pod 'Blockstack', :git => 'https://github.com/bracedotto/blockstack-ios.git', :commit => '45bcb11'
+  pod 'Blockstack', :git => 'https://github.com/bracedotto/blockstack-ios.git', :commit => '3c7a2cc'
 
   config = use_native_modules!
 
@@ -24,6 +48,8 @@ target 'example' do
   use_flipper!({ 'Flipper' => '0.95.0' })
   post_install do |installer|
     flipper_post_install(installer)
+    __apply_Xcode_14_3_RC_post_install_workaround(installer)
+    __apply_xcode_15_patch(installer)
   end
 end
 

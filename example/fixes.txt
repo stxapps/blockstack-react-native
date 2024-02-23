@@ -1,0 +1,6 @@
+Need to use NodeJS 16
+  - nvm alias default 16
+  - don't forget to turn it back!
+Need to fix Yoga.cpp
+  - add | => node->getLayout().hadOverflow() ||
+  - stackoverflow.com/questions/75897834
